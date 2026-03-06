@@ -1,0 +1,91 @@
+{
+    "meta": {
+        "schema_version": "1.1.0",
+        "awf_version": "3.3.0"
+    },
+    "project": {
+        "name": "WIKI-AI (Local Multi-Agent)",
+        "type": "Web App (Chat-centric UI)",
+        "status": "Core Backend Complete (Phase 01-06)"
+    },
+    "tech_stack": {
+        "frontend": {
+            "framework": "React 19 + Vite",
+            "styling": "TailwindCSS 4"
+        },
+        "backend": {
+            "framework": "FastAPI",
+            "ai_engine": "LangGraph (Multi-agent)",
+            "llm_backend": "IPEX-LLM (SYCL) / Ollama",
+            "observability": "LangFuse"
+        },
+        "database": {
+            "relational": "SQLite (Users, Sessions, Messages)",
+            "vector": "Qdrant (Local memmap storage)",
+            "caching": "Redis (Memory Manager fallback JSON)"
+        }
+    },
+    "database_schema": {
+        "summary": "App quản lý người dùng, phiên chat và lịch sử tin nhắn",
+        "tables": [
+            {
+                "name": "users",
+                "columns": [
+                    "id",
+                    "username",
+                    "password_hash",
+                    "avatar_url",
+                    "created_at"
+                ]
+            },
+            {
+                "name": "sessions",
+                "columns": [
+                    "id",
+                    "user_id",
+                    "title",
+                    "created_at"
+                ]
+            },
+            {
+                "name": "messages",
+                "columns": [
+                    "id",
+                    "session_id",
+                    "role",
+                    "content",
+                    "agent_used",
+                    "timestamp"
+                ]
+            }
+        ],
+        "relationships_explained": "1 User có nhiều ChatSessions. 1 ChatSession chứa nhiều Messages. Mỗi message có đánh dấu 'agent_used' (supervisor, wiki_agent, sales_agent, summary_agent)."
+    },
+    "api_endpoints": [
+        {
+            "path": "POST /api/chat/send",
+            "explained": "Route chính: Nhận câu hỏi, đưa qua Supervisor -> Sub-agent -> Trả về kết quả kèm trace_id (LangFuse)"
+        },
+        {
+            "path": "GET /api/system/status",
+            "explained": "Kiểm tra trạng thái (health check) của LLM, Embedding (nomic-embed), Qdrant và LangFuse"
+        }
+    ],
+    "features": [
+        "Hybrid Routing: Supervisor phân loại intent dựa trên Keyword + Semantic Embedding",
+        "Advanced RAG: Layer 1 (Query Expansion bằng Synonym ~72 entries), Layer 2 (Custom Code-only Reranking), Layer 3 (CRAG retry)",
+        "Tiered Memory: Hot Context (8 msgs), Progressive Summary, Cross-session Profile",
+        "Hardware Optimization: IPsX-LLM SYCL backend cho Intel UHD 730, 4-bit Quantization",
+        "LangFuse Observability: Tracing toàn bộ luồng Graph, tính token, đo latency"
+    ],
+    "knowledge_items": {
+        "patterns": [
+            "Tách logic Reranking chạy trên CPU (bằng code Python thuần) để giải phóng VRAM GPU cho LLM inference.",
+            "Tạo fallback chain cho LLM: IPEX-LLM -> Ollama -> llama.cpp"
+        ],
+        "gotchas": [
+            "nomic-embed-text-v1.5 bắt buộc phải có prefix 'search_query:' hoặc 'search_document:' để tạo vector đúng.",
+            "Khi write file liên tục, filesystem Windows có thể bị issue mất file, cần Audit thường xuyên."
+        ]
+    }
+}
