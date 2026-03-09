@@ -36,3 +36,7 @@ Thumbs.db
 .brain/session.json
 .brain/session_log.txt
 .brain/handover.md
+
+# --- Local nested worktree ---
+trigger_worktree/
+
